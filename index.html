@@ -4,18 +4,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Phần mềm đồng bộ điểm Point Sync</title>
-    <link rel="shortcut icon" href="itedu.ico" type="image/x-icon">
-    <link rel="canonical" href="https://itedu.vn/" />
-    <meta name="description" content="Đồng bộ điểm lên trang csdl ngành!" />
-    <meta name="keywords" content="đồng bộ, csdl, ngành, hướng dẫn sử dụng phần mềm, cài đặt phần mềm, thiết lập phần mềm, phần mềm mới" />
-    <meta name="robots" content="index, follow" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header>
       <div class="header-inner">
         <div class="logo">
-            <img src="itedu.png" alt="itedu logo" />
+          <!-- Thay SVG bằng logo ảnh -->
+          <img src="itedu.png" alt="itedu logo" />
         </div>
         <div>
           <div class="title">TRƯỜNG THPT NGUYỄN DU - NINH SƠN - PHẦN MỀM ĐỒNG BỘ ĐIỂM LÊN CSDL NGÀNH</div>
@@ -101,9 +97,38 @@
         </section>
       </div>
     </main>
+
     <footer>
       PHẦN MỀM PHÁT TRIỂN BỞI THẦY NGUYỄN NGỌC THẠNH GIÁO VIÊN TIN HỌC TRƯỜNG THPT NGUYỄN DU - NINH SƠN - KHÁNH HOÀ
     </footer>
+
+    <!-- Modal CD-Key -->
+    <div id="cdkey_backdrop" class="modal-backdrop" hidden></div>
+    <div id="cdkey_modal" class="modal" hidden role="dialog" aria-labelledby="cdkey_title" aria-modal="true">
+      <div class="modal-header">
+        <h3 id="cdkey_title">Kích hoạt bản quyền</h3>
+      </div>
+      <div class="modal-body">
+        <p>Gửi <strong>Device ID</strong> sau cho tác giả để nhận CD-Key:</p>
+        <div class="modal-field">
+          <label>Device ID</label>
+          <input id="cdkey_device" type="text" readonly />
+        </div>
+        <div class="modal-field">
+          <label>Nhập CD-Key</label>
+          <input id="cdkey_input" type="text" placeholder="XXXX-XXXX-XXXX-XXXX" />
+        </div>
+        <div id="cdkey_error" class="modal-error" style="display:none;">CD-Key không hợp lệ. Vui lòng thử lại.</div>
+        <p class="modal-hint">
+          CD-Key hợp lệ là 16 ký tự đầu của <code>SHA-256(DeviceID)</code> (có thể nhập kèm hoặc bỏ dấu “-”).
+          Bạn vui lòng liên hệ tác giả: Nguyễn Ngọc Thạnh giáo viên Tin học trường THPT Nguyễn Du - Ninh Sơn, Khánh Hoà. Zalo: <strong>0906640050-0911375271</strong>.
+        </p>
+      </div>
+      <div class="modal-actions">
+        <button id="cdkey_cancel" type="button" class="btn">Đóng</button>
+        <button id="cdkey_submit" type="button" class="btn primary">Xác nhận</button>
+      </div>
+    </div>
 
     <!-- XlsxPopulate CDN -->
     <script src="https://unpkg.com/xlsx-populate/browser/xlsx-populate.min.js"></script>
