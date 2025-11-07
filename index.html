@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Phần mềm đồng bộ điểm Point Sync</title>
+    <link rel="shortcut icon" href="itedu.ico" type="image/x-icon">
+    <link rel="canonical" href="https://itedu.vn/" />
+    <meta name="description" content="Đồng bộ điểm lên trang csdl ngành!" />
+    <meta name="keywords" content="đồng bộ, csdl, ngành, hướng dẫn sử dụng phần mềm, cài đặt phần mềm, thiết lập phần mềm, phần mềm mới" />
+    <meta name="robots" content="index, follow" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-inner">
+        <div class="logo">
+            <img src="itedu.png" alt="itedu logo" />
+        </div>
+        <div>
+          <div class="title">TRƯỜNG THPT NGUYỄN DU - NINH SƠN - PHẦN MỀM ĐỒNG BỘ ĐIỂM LÊN CSDL NGÀNH</div>
+          <div class="sub">Ghép điểm theo 8 số cuối Mã định danh · Bản web - Liên hệ tác giả: 0906640050</div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="grid">
+        <!-- 1. File nguồn -->
+        <section class="card">
+          <h2>1. File Excel đã chấm trắc nghiệm <span>(nguồn)</span></h2>
+
+          <label for="src_xlsx">File nguồn (.xlsx)</label>
+          <input id="src_xlsx" type="file" accept=".xlsx" />
+
+          <div class="row">
+            <div>
+              <label for="col_sbd">Cột SBD (file nguồn)</label>
+              <select id="col_sbd"></select>
+            </div>
+            <div>
+              <label for="col_score">Cột Điểm (file nguồn)</label>
+              <select id="col_score"></select>
+            </div>
+          </div>
+
+          <div class="hint">
+            Thường: cột <strong>A</strong> là SBD, <strong>B</strong> là Điểm. Có thể điều chỉnh cho phù hợp.
+          </div>
+        </section>
+
+        <!-- 2. File đích -->
+        <section class="card">
+          <h2>2. File Excel lớp cần chép <span>(nhiều sheet)</span></h2>
+
+          <label for="dst_xlsx">File lớp (.xlsx)</label>
+          <input id="dst_xlsx" type="file" accept=".xlsx" />
+
+          <div class="inline" style="margin-top:8px;">
+            <span class="badge" id="detect_info">Chưa đọc file lớp.</span>
+            <span class="muted" id="dst_name"></span>
+            <button id="analyze_btn" class="secondary" type="button">3. Tìm kiếm cột cần chép</button>
+          </div>
+
+          <label for="dest_label" style="margin-top:10px;">Cột điểm đích (áp cho tất cả sheet)</label>
+          <select id="dest_label"></select>
+        </section>
+
+        <!-- 3. Hành động -->
+        <section class="card full">
+          <div class="inline" style="justify-content: space-between;">
+            <div class="muted">
+              Sau khi chọn đủ file &amp; phân tích cột, nhấn <strong>4. Đồng bộ điểm</strong> để tạo file kết quả.
+              Phím tắt: <strong>Ctrl + R</strong>.
+            </div>
+            <button id="run_btn" type="button">4. Đồng bộ điểm</button>
+          </div>
+        </section>
+
+        <!-- 4. Danh sách thiếu điểm -->
+        <section class="card full">
+          <h2>Danh sách học sinh chưa có điểm</h2>
+          <div style="max-height: 320px; overflow: auto; border-radius: 10px;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 80px;">STT</th>
+                  <th>Họ và tên</th>
+                  <th style="width: 160px;">Lớp</th>
+                </tr>
+              </thead>
+              <tbody id="missing_tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 5. Trạng thái -->
+        <section class="card full">
+          <h2>Trạng thái</h2>
+          <div id="status" class="status">Sẵn sàng.</div>
+        </section>
+      </div>
+    </main>
+    <footer>
+      PHẦN MỀM PHÁT TRIỂN BỞI THẦY NGUYỄN NGỌC THẠNH GIÁO VIÊN TIN HỌC TRƯỜNG THPT NGUYỄN DU - NINH SƠN - KHÁNH HOÀ
+    </footer>
+
+    <!-- XlsxPopulate CDN -->
+    <script src="https://unpkg.com/xlsx-populate/browser/xlsx-populate.min.js"></script>
+    <!-- Scripts -->
+    <script src="./tour.js" defer></script>
+    <script src="./app.js" defer></script>
+  </body>
+</html>
