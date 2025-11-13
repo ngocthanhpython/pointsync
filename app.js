@@ -1,6 +1,8 @@
 /* =========================
  * Point Sync - app.js
  * (giữ nguyên logic, thêm CD-Key: miễn phí 2 lần, từ lần 3 mới hỏi)
+ * + Cải tiến làm tròn điểm kiểu ROUND_HALF_UP (2.25 -> 2.3)
+ * + Đồng bộ cho TẤT CẢ sheet lớp trong file đích
  * ========================= */
 
 /* ===== Helpers ===== */
@@ -20,10 +22,111 @@ function addMissing(stt,hoten,lop){
 }
 function colToIndex(L){ L=(L||"").toUpperCase(); let idx=0; for(const ch of L){const n=ch.charCodeAt(0)-64; if(n>=1&&n<=26) idx=idx*26+n;} return idx; }
 function norm(s){ if(s==null) return ""; s=String(s).trim().toLowerCase().replaceAll("đ","d"); try{s=s.normalize("NFD").replace(/[\u0300-\u036f]/g,"");}catch(e){} return s; }
-function last8(v){ if(v==null) return ""; let s=String(v).trim(); if(/^[0-9]+\.0$/.test(s)) s=s.slice(0,-2); const d=(s.match(/[0-9]/g)||[]).join(""); if(!d) return ""; return d.padStart(8,"0").slice(-8); }
-function parseScore(val){ if(val==null) return null; const f=Number(String(val).trim().replace(",", ".")); if(!isFinite(f)||f<0||f>10) return null; return Math.round(f*100)/100; }
+function last8(v){
+  if(v==null) return "";
+  let s=String(v).trim();
+  if(/^[0-9]+\.0$/.test(s)) s=s.slice(0,-2);
+  const d=(s.match(/[0-9]/g)||[]).join("");
+  if(!d) return "";
+  return d.padStart(8,"0").slice(-8);
+}
 function colLetter(n){ let s=""; while(n>0){const r=(n-1)%26; s=String.fromCharCode(65+r)+s; n=Math.floor((n-1)/26);} return s; }
 const MAX_R=4000, MAX_C=128;
+
+/* ===== Làm tròn kiểu ROUND_HALF_UP (2.25 -> 2.3) ===== */
+function roundHalfUp(value, digits=0){
+  if(value==null) return null;
+  let s = String(value).trim().replace(",", ".");
+  if(s==="") return null;
+
+  // Chỉ xử lý số; nếu chuỗi lạ thì ép sang Number rồi stringify lại
+  if(!/^-?\d+(\.\d+)?$/.test(s)){
+    const num = Number(s);
+    if(!isFinite(num)) return null;
+    s = String(num);
+  }
+
+  let negative = false;
+  if(s.startsWith("-")){
+    negative = true;
+    s = s.slice(1);
+  }
+
+  let [intPart, fracPart=""] = s.split(".");
+  fracPart = fracPart.replace(/[^0-9]/g,"");
+
+  if(digits <= 0){
+    // làm tròn về số nguyên
+    const first = fracPart[0] || "0";
+    if(first >= "5"){
+      let carry = 1, res = "";
+      for(let i=intPart.length-1;i>=0;i--){
+        let d = intPart.charCodeAt(i)-48 + carry;
+        if(d>=10){ d-=10; carry=1; } else carry=0;
+        res = String.fromCharCode(48+d) + res;
+      }
+      if(carry) res = "1" + res;
+      intPart = res;
+    }
+    const outStr = (negative?"-":"") + intPart;
+    return Number(outStr);
+  }
+
+  // digits > 0: làm tròn đến digits chữ số sau dấu phẩy
+  while(fracPart.length < digits+1){
+    fracPart += "0";
+  }
+  const cut   = fracPart.slice(0, digits);
+  const next  = fracPart[digits] || "0";
+
+  let fracRounded = cut;
+  let carryInt = 0;
+
+  if(next >= "5"){
+    // +1 vào phần thập phân
+    let carry = 1, res = "";
+    for(let i=cut.length-1;i>=0;i--){
+      let d = cut.charCodeAt(i)-48 + carry;
+      if(d>=10){ d-=10; carry=1; } else carry=0;
+      res = String.fromCharCode(48+d) + res;
+    }
+    fracRounded = res;
+    if(carry){
+      // tràn sang phần nguyên
+      carryInt = 1;
+    }
+  }
+
+  if(carryInt){
+    let carry=1, res="";
+    for(let i=intPart.length-1;i>=0;i--){
+      let d = intPart.charCodeAt(i)-48 + carry;
+      if(d>=10){ d-=10; carry=1; } else carry=0;
+      res = String.fromCharCode(48+d) + res;
+    }
+    if(carry) res="1"+res;
+    intPart = res;
+  }
+
+  fracRounded = fracRounded.padStart(digits,"0").slice(0,digits);
+  let outStr = (negative?"-":"") + intPart;
+  if(digits>0) outStr += "." + fracRounded;
+  return Number(outStr);
+}
+
+/* Điểm: trả về float trong [0,10], làm sạch đến 2 chữ số bằng ROUND_HALF_UP */
+function parseScore(val){
+  if(val==null) return null;
+  let s = String(val).trim();
+  if(s==="") return null;
+  s = s.replace(",", ".");
+
+  const f = Number(s);
+  if(!isFinite(f) || f < 0 || f > 10) return null;
+
+  // làm sạch nguồn đến 2 chữ số (2.345 -> 2.35) theo half-up
+  return roundHalfUp(f, 2);
+}
 
 /* ===== Detect rows/cols (giữ nguyên) ===== */
 function detectRows(sheet){
@@ -160,7 +263,7 @@ async function isLicensedOrPrompt(){
   // đã kích hoạt?
   if(localStorage.getItem(LS_KEY_LICENSED)==="1") return true;
 
-  // miễn phí 8 lần
+  // miễn phí 8 lần (bạn có thể chỉnh lại số lần nếu muốn)
   const runs = parseInt(localStorage.getItem(LS_KEY_RUNS)||"0",10);
   if(runs < 8){
     localStorage.setItem(LS_KEY_RUNS, String(runs+1));
@@ -228,7 +331,7 @@ document.getElementById("src_xlsx")?.addEventListener("change", async (e)=>{
   srcArrayBuffer = f? await f.arrayBuffer(): null;
 });
 
-/* ===== Analyze columns ===== */
+/* ===== Analyze columns (lấy cấu trúc từ 1 sheet đại diện) ===== */
 document.getElementById("analyze_btn")?.addEventListener("click", async ()=>{
   try{
     if(!destArrayBuffer){ setStatus("Chưa chọn file lớp (.xlsx)."); return; }
@@ -275,7 +378,7 @@ document.addEventListener("keydown",(ev)=>{
   }
 });
 
-/* ===== RUN SYNC (có kiểm tra CD-Key) ===== */
+/* ===== RUN SYNC (có kiểm tra CD-Key, chạy cho TOÀN BỘ sheet lớp) ===== */
 document.getElementById("run_btn").addEventListener("click", async ()=>{
   if(!(await isLicensedOrPrompt())) return;  /* chặn nếu chưa hợp lệ (modal sẽ hiện) */
 
@@ -284,11 +387,11 @@ document.getElementById("run_btn").addEventListener("click", async ()=>{
     if(!srcArrayBuffer||!destArrayBuffer){ setStatus("Vui lòng chọn đủ 2 tệp .xlsx (nguồn & lớp)."); return; }
 
     const destLabel=document.getElementById("dest_label").value;
-    if(!destLabel){ setStatus("Chưa có lựa chọn cột đích. Hãy bấm 'Phân tích cột' trước."); return; }
+    if(!destLabel){ setStatus("Chưa có lựa chọn cột đích. Hãy bấm '3. Tìm kiếm cột cần chép' trước."); return; }
 
     setStatus("Đang đồng bộ điểm... Vui lòng chờ.");
 
-    // Source
+    // ===== 1) File nguồn =====
     const swb=await XlsxPopulate.fromDataAsync(srcArrayBuffer);
     const sst=swb.sheet(0);
     const idIdx=colToIndex(document.getElementById("col_sbd").value||"A");
@@ -313,7 +416,7 @@ document.getElementById("run_btn").addEventListener("click", async ()=>{
       sourceMap[k]=score;
     }
 
-    // Dest
+    // ===== 2) File lớp: duyệt TOÀN BỘ sheet lớp =====
     const dwb=await XlsxPopulate.fromDataAsync(destArrayBuffer);
     const names=dwb.sheets().map(sh=>sh.name());
     const skip=new Set(["huongdan","readme","guide","hdsd"]);
@@ -362,16 +465,18 @@ document.getElementById("run_btn").addEventListener("click", async ()=>{
       }
       if(presentRows.length===0) continue;
 
-      // Ghi điểm
+      // Ghi điểm cho từng HS trong sheet
       for(const r of presentRows){
         const mddVal=ws.cell(r,mddCol).value();
         const k=last8(mddVal);
         if(k && (k in sourceMap)){
-          const val=Math.round(Number(sourceMap[k])*10)/10;
+          // LÀM TRÒN 1 CHỮ SỐ BẰNG ROUND_HALF_UP (2.25 -> 2.3)
+          const val = roundHalfUp(sourceMap[k], 1);
           ws.cell(r,destCol).value(val).style("numberFormat","0.0");
         }
       }
 
+      // tô vàng những ô vẫn chưa có điểm + gom danh sách thiếu
       const yellow="ffff00";
       let copiedSheet=0;
       const missingRows=[];
@@ -393,7 +498,7 @@ document.getElementById("run_btn").addEventListener("click", async ()=>{
       updatedSheets++;
     }
 
-    // Xuất file
+    // ===== 3) Xuất file kết quả =====
     const outName=`Dongbo_cot_${destLabel}_toan_bo_lop.xlsx`;
     const blob=await dwb.outputAsync();
     const url=URL.createObjectURL(blob);
