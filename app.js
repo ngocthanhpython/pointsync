@@ -265,7 +265,7 @@ async function isLicensedOrPrompt(){
 
   // miễn phí 8 lần (bạn có thể chỉnh lại số lần nếu muốn)
   const runs = parseInt(localStorage.getItem(LS_KEY_RUNS)||"0",10);
-  if(runs < 4){
+  if(runs < 3){
     localStorage.setItem(LS_KEY_RUNS, String(runs+1));
     return true;
   }
